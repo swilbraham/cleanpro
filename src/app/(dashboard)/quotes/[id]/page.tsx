@@ -22,6 +22,7 @@ import {
   Trash2,
   ArrowRightLeft,
   Loader2,
+  FileDown,
 } from "lucide-react";
 
 interface LineItem {
@@ -197,6 +198,16 @@ export default function QuoteDetailPage() {
           </div>
         </div>
         <div className="flex gap-2">
+          <a
+            href={`/api/quotes/${quote.id}/pdf`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline">
+              <FileDown className="mr-2 h-4 w-4" />
+              Download PDF
+            </Button>
+          </a>
           {isEditable && (
             <Link href={`/quotes/${quote.id}/edit`}>
               <Button variant="outline">
