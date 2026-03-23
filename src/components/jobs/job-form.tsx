@@ -13,7 +13,7 @@ import { Select } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useToast } from "@/components/ui/toast";
 import { formatCurrency } from "@/lib/formatters";
-import { Plus, Trash2, Loader2, Search } from "lucide-react";
+import { Plus, Trash2, Loader2, Search, CalendarCheck, MapPin, Sparkles } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -54,6 +54,14 @@ interface LineItem {
   unitPrice: number;
 }
 
+interface DateSuggestion {
+  date: string;
+  reason: string;
+  nearbyJobs: number;
+  totalJobs: number;
+  suggestedTime: string | null;
+}
+
 interface JobFormProps {
   initialData?: {
     id: string;
@@ -76,6 +84,9 @@ export function JobForm({ initialData }: JobFormProps) {
   const [services, setServices] = useState<Service[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
+
+  const [dateSuggestions, setDateSuggestions] = useState<DateSuggestion[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   // Customer search state
   const [customerSearch, setCustomerSearch] = useState("");
@@ -160,6 +171,38 @@ export function JobForm({ initialData }: JobFormProps) {
     }
     loadProperties();
   }, [selectedCustomer]);
+
+  // Load date suggestions when customer changes (only for new jobs)
+  useEffect(() => {
+    if (initialData || !selectedCustomer) {
+      setDateSuggestions([]);
+      return;
+    }
+    async function loadSuggestions() {
+      setLoadingSuggestions(true);
+      try {
+        const res = await fetch(
+          `/api/jobs/suggest-dates?customerId=${selectedCustomer!.id}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setDateSuggestions(data.suggestions || []);
+        }
+      } catch {
+        setDateSuggestions([]);
+      } finally {
+        setLoadingSuggestions(false);
+      }
+    }
+    loadSuggestions();
+  }, [selectedCustomer, initialData]);
+
+  const applySuggestion = (suggestion: DateSuggestion) => {
+    setValue("scheduledDate", suggestion.date);
+    if (suggestion.suggestedTime) {
+      setValue("scheduledTime", suggestion.suggestedTime);
+    }
+  };
 
   // Customer search
   const searchCustomers = useCallback(async (query: string) => {
@@ -392,6 +435,62 @@ export function JobForm({ initialData }: JobFormProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Smart Date Suggestions */}
+      {!initialData && selectedCustomer && (dateSuggestions.length > 0 || loadingSuggestions) && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Suggested Appointments
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Based on nearby jobs in the same area
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingSuggestions ? (
+              <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Finding best dates...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                {dateSuggestions.map((suggestion, i) => (
+                  <button
+                    key={suggestion.date}
+                    type="button"
+                    onClick={() => applySuggestion(suggestion)}
+                    className="flex flex-col items-start gap-1 rounded-lg border border-border bg-card p-3 text-left transition-all hover:border-primary hover:shadow-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CalendarCheck className="h-4 w-4 text-primary" />
+                      <span className="font-semibold text-sm">
+                        {new Date(suggestion.date + "T12:00:00").toLocaleDateString("en-GB", {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
+                      {suggestion.suggestedTime && (
+                        <span className="text-xs text-muted-foreground">
+                          {suggestion.suggestedTime}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      {suggestion.nearbyJobs > 0 && (
+                        <MapPin className="h-3 w-3" />
+                      )}
+                      {suggestion.reason}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Schedule & Assignment */}
       <Card>
