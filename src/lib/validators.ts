@@ -55,8 +55,23 @@ export const jobSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const requestSchema = z.object({
+  source: z.enum(["WEBSITE", "PHONE", "EMAIL", "REFERRAL", "OTHER"]),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Invalid email").optional().or(z.literal("")),
+  phone: z.string().min(1, "Phone number is required"),
+  address: z.string().optional().or(z.literal("")),
+  city: z.string().optional().or(z.literal("")),
+  postcode: z.string().optional().or(z.literal("")),
+  description: z.string().min(1, "Description is required"),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH"]),
+  notes: z.string().optional().or(z.literal("")),
+});
+
 export type CustomerFormData = z.infer<typeof customerSchema>;
 export type PropertyFormData = z.infer<typeof propertySchema>;
 export type ServiceFormData = z.infer<typeof serviceSchema>;
 export type QuoteFormData = z.infer<typeof quoteSchema>;
 export type JobFormData = z.infer<typeof jobSchema>;
+export type RequestFormData = z.infer<typeof requestSchema>;
