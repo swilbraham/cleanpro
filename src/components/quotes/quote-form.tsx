@@ -324,9 +324,9 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
             return (
               <div
                 key={field.id}
-                className="grid grid-cols-12 gap-3 items-end rounded-md border p-4"
+                className="flex flex-col gap-3 rounded-md border p-3 md:grid md:grid-cols-12 md:items-end md:p-4"
               >
-                <div className="col-span-3">
+                <div className="md:col-span-3">
                   <Label>Service</Label>
                   <Select
                     value={watchLineItems?.[index]?.serviceId || ""}
@@ -346,7 +346,7 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
                   )}
                 </div>
 
-                <div className="col-span-3">
+                <div className="md:col-span-3">
                   <Label>Description</Label>
                   <Input
                     {...register(`lineItems.${index}.description`)}
@@ -359,7 +359,7 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
                   )}
                 </div>
 
-                <div className="col-span-2">
+                <div className="md:col-span-2">
                   <Label>Qty</Label>
                   <Input
                     type="number"
@@ -375,7 +375,7 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
                   )}
                 </div>
 
-                <div className="col-span-2">
+                <div className="md:col-span-2">
                   <Label>Unit Price</Label>
                   <Input
                     type="number"
@@ -392,24 +392,26 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
                   )}
                 </div>
 
-                <div className="col-span-1 text-right">
-                  <Label>Total</Label>
-                  <p className="py-2 font-medium">
-                    {formatCurrency(lineTotal)}
-                  </p>
-                </div>
+                <div className="flex items-center justify-between md:col-span-2 md:contents">
+                  <div className="md:col-span-1 md:text-right">
+                    <Label>Total</Label>
+                    <p className="py-2 font-medium">
+                      {formatCurrency(lineTotal)}
+                    </p>
+                  </div>
 
-                <div className="col-span-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => remove(index)}
-                    disabled={fields.length <= 1}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="md:col-span-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove(index)}
+                      disabled={fields.length <= 1}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             );
@@ -423,7 +425,7 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
 
           {/* Totals */}
           <div className="mt-6 flex justify-end">
-            <div className="w-72 space-y-2">
+            <div className="w-full sm:w-72 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
                 <span>{formatCurrency(subtotal)}</span>
@@ -468,7 +470,7 @@ export function QuoteForm({ initialData }: QuoteFormProps) {
       </Card>
 
       {/* Actions */}
-      <div className="flex gap-3 justify-end">
+      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <Button
           type="button"
           variant="outline"

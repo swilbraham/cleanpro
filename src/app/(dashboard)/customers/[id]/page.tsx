@@ -256,24 +256,24 @@ export default function CustomerDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
           <Link href="/customers">
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
           </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">
               {customer.firstName} {customer.lastName}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground truncate">
               Customer since {formatDate(customer.createdAt)}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href={`/customers/${id}/edit`}>
             <Button variant="outline">
               <Pencil className="mr-2 h-4 w-4" />
@@ -509,14 +509,15 @@ export default function CustomerDetailPage() {
                   No jobs yet.
                 </p>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Job #</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
-                      <TableHead>Property</TableHead>
-                      <TableHead>Assigned To</TableHead>
+                      <TableHead className="hidden sm:table-cell">Property</TableHead>
+                      <TableHead className="hidden sm:table-cell">Assigned To</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -540,16 +541,17 @@ export default function CustomerDetailPage() {
                           </span>
                         </TableCell>
                         <TableCell>{formatDate(job.scheduledDate)}</TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           {job.property?.address || "No property"}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden sm:table-cell">
                           {job.assignedTo?.name || "Unassigned"}
                         </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
+              </div>
               )}
             </CardContent>
           </Card>

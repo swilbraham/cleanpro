@@ -15,21 +15,20 @@ export async function POST(request: Request) {
 
     switch (action) {
       case "delete": {
-        // Check for invoiced jobs
-        const invoicedJobs = await prisma.job.findMany({
-          where: { id: { in: ids }, invoice: { isNot: null } },
-          select: { jobNumber: true },
-        });
-        if (invoicedJobs.length > 0) {
-          return NextResponse.json(
-            {
-              error: `Cannot delete jobs with invoices: ${invoicedJobs.map((j) => j.jobNumber).join(", ")}`,
-            },
-            { status: 400 }
-          );
-        }
-
         await prisma.$transaction(async (tx) => {
+          // Delete payments on any invoices linked to these jobs
+          const invoiceIds = (
+            await tx.invoice.findMany({
+              where: { jobId: { in: ids } },
+              select: { id: true },
+            })
+          ).map((inv) => inv.id);
+          if (invoiceIds.length > 0) {
+            await tx.payment.deleteMany({ where: { invoiceId: { in: invoiceIds } } });
+            await tx.invoice.deleteMany({ where: { id: { in: invoiceIds } } });
+          }
+          // Delete time entries linked to these jobs
+          await tx.timeEntry.deleteMany({ where: { jobId: { in: ids } } });
           await tx.jobLineItem.deleteMany({ where: { jobId: { in: ids } } });
           await tx.job.deleteMany({ where: { id: { in: ids } } });
         });

@@ -232,27 +232,27 @@ function PageContent() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
           <Link href="/invoices">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Invoices
             </Button>
           </Link>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">
                 {invoice.invoiceNumber}
               </h1>
               <PaymentStatusBadge status={invoice.status} />
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground truncate">
               Created {formatDate(invoice.createdAt)}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={handleDownloadPDF}>
             <Download className="mr-2 h-4 w-4" />
             Download PDF
@@ -281,7 +281,7 @@ function PageContent() {
           <CardContent>
             <form
               onSubmit={handleRecordManualPayment}
-              className="flex items-end gap-4"
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
             >
               <div className="space-y-2">
                 <Label htmlFor="amount">Amount</Label>
@@ -301,7 +301,7 @@ function PageContent() {
                 <Label htmlFor="method">Payment Method</Label>
                 <Select
                   id="method"
-                  className="w-[180px]"
+                  className="w-full sm:w-[180px]"
                   value={manualMethod}
                   onChange={(e) => setManualMethod(e.target.value)}
                 >
@@ -436,11 +436,12 @@ function PageContent() {
           <CardTitle>Line Items</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Service</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead className="hidden sm:table-cell">Description</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Unit Price</TableHead>
                 <TableHead className="text-right">Total</TableHead>
@@ -452,7 +453,7 @@ function PageContent() {
                   <TableCell className="font-medium">
                     {item.service.name}
                   </TableCell>
-                  <TableCell>{item.description}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{item.description}</TableCell>
                   <TableCell className="text-right">{item.quantity}</TableCell>
                   <TableCell className="text-right">
                     {formatCurrency(item.unitPrice)}
@@ -464,6 +465,7 @@ function PageContent() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -478,13 +480,14 @@ function PageContent() {
               No payments recorded yet
             </p>
           ) : (
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Date</TableHead>
                   <TableHead>Method</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Reference</TableHead>
+                  <TableHead className="hidden sm:table-cell">Status</TableHead>
+                  <TableHead className="hidden sm:table-cell">Reference</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                 </TableRow>
               </TableHeader>
@@ -497,10 +500,10 @@ function PageContent() {
                     <TableCell>
                       {PAYMENT_METHOD_LABELS[payment.method] || payment.method}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <PaymentStatusBadge status={payment.status} />
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">
+                    <TableCell className="hidden sm:table-cell text-muted-foreground text-xs">
                       {payment.stripePaymentId || "-"}
                     </TableCell>
                     <TableCell className="text-right font-medium">
@@ -510,6 +513,7 @@ function PageContent() {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

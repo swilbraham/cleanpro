@@ -208,27 +208,27 @@ export default function JobDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
           <Link href="/jobs">
             <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
           </Link>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">
                 {job.jobNumber}
               </h1>
               <JobStatusBadge status={job.status} />
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground truncate">
               Created {formatDate(job.createdAt)}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {/* Status Progression Buttons */}
           {job.status === "SCHEDULED" && (
             <Button
@@ -368,11 +368,12 @@ export default function JobDetailPage() {
                 </p>
               ) : (
                 <>
+                  <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Service</TableHead>
-                        <TableHead>Description</TableHead>
+                        <TableHead className="hidden sm:table-cell">Description</TableHead>
                         <TableHead className="text-center">Qty</TableHead>
                         <TableHead className="text-right">
                           Unit Price
@@ -386,7 +387,7 @@ export default function JobDetailPage() {
                           <TableCell className="font-medium">
                             {item.service.name}
                           </TableCell>
-                          <TableCell>{item.description}</TableCell>
+                          <TableCell className="hidden sm:table-cell">{item.description}</TableCell>
                           <TableCell className="text-center">
                             {item.quantity}
                           </TableCell>
@@ -400,8 +401,9 @@ export default function JobDetailPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                   <div className="mt-4 flex justify-end border-t pt-4">
-                    <div className="w-64 space-y-2">
+                    <div className="w-full sm:w-64 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Subtotal</span>
                         <span>{formatCurrency(subtotal)}</span>

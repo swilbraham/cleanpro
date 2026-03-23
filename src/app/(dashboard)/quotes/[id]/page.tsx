@@ -177,27 +177,27 @@ export default function QuoteDetailPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-4 min-w-0">
           <Link href="/quotes">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Quotes
             </Button>
           </Link>
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight">
+              <h1 className="text-xl sm:text-3xl font-bold tracking-tight truncate">
                 {quote.quoteNumber}
               </h1>
               <QuoteStatusBadge status={quote.status} />
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground truncate">
               Created {formatDate(quote.createdAt)}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <a
             href={`/api/quotes/${quote.id}/pdf`}
             target="_blank"
@@ -354,11 +354,12 @@ export default function QuoteDetailPage() {
           <CardTitle>Line Items</CardTitle>
         </CardHeader>
         <CardContent>
+          <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Service</TableHead>
-                <TableHead>Description</TableHead>
+                <TableHead className="hidden sm:table-cell">Description</TableHead>
                 <TableHead className="text-right">Qty</TableHead>
                 <TableHead className="text-right">Unit Price</TableHead>
                 <TableHead className="text-right">Total</TableHead>
@@ -370,7 +371,7 @@ export default function QuoteDetailPage() {
                   <TableCell className="font-medium">
                     {item.service.name}
                   </TableCell>
-                  <TableCell>{item.description}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{item.description}</TableCell>
                   <TableCell className="text-right">
                     {item.quantity}
                   </TableCell>
@@ -384,6 +385,7 @@ export default function QuoteDetailPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 

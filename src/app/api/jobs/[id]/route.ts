@@ -193,14 +193,16 @@ export async function DELETE(
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
-    if (existing.invoice) {
-      return NextResponse.json(
-        { error: "Cannot delete a job that has an invoice. Void the invoice first." },
-        { status: 400 }
-      );
-    }
-
-    await prisma.job.delete({ where: { id } });
+    // Cascade delete invoice, payments, time entries, and line items
+    await prisma.$transaction(async (tx) => {
+      if (existing.invoice) {
+        await tx.payment.deleteMany({ where: { invoiceId: existing.invoice.id } });
+        await tx.invoice.delete({ where: { id: existing.invoice.id } });
+      }
+      await tx.timeEntry.deleteMany({ where: { jobId: id } });
+      await tx.jobLineItem.deleteMany({ where: { jobId: id } });
+      await tx.job.delete({ where: { id } });
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

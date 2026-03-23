@@ -25,20 +25,20 @@ export function JobMobileCard({ job }: { job: Job }) {
       onClick={() => router.push(`/jobs/${job.id}`)}
       className="cursor-pointer rounded-lg border border-border bg-card p-4 transition-colors hover:bg-muted/50 active:bg-muted"
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm">{job.jobNumber}</span>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-semibold text-sm truncate">{job.jobNumber}</span>
             <JobStatusBadge status={job.status} />
           </div>
-          <p className="font-medium">
+          <p className="font-medium truncate">
             {job.customer.firstName} {job.customer.lastName}
           </p>
           {job.property && (
-            <p className="text-sm text-muted-foreground">{job.property.address}</p>
+            <p className="text-sm text-muted-foreground truncate">{job.property.address}</p>
           )}
         </div>
-        <div className="text-right">
+        <div className="text-right flex-shrink-0">
           <p className="font-semibold">{formatCurrency(total)}</p>
         </div>
       </div>
