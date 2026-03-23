@@ -16,6 +16,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { JobStatusBadge } from "@/components/jobs/job-status-badge";
+import { JobMobileCard } from "@/components/jobs/job-mobile-card";
 import { formatDate, formatTime, formatCurrency } from "@/lib/formatters";
 import {
   Plus,
@@ -260,6 +261,15 @@ function PageContent() {
             </div>
           ) : (
             <>
+              {/* Mobile card view */}
+              <div className="space-y-3 lg:hidden">
+                {jobs.map((job) => (
+                  <JobMobileCard key={job.id} job={job} />
+                ))}
+              </div>
+
+              {/* Desktop table view */}
+              <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -324,6 +334,7 @@ function PageContent() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between border-t pt-4 mt-4">

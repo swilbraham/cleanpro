@@ -16,6 +16,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { CustomerMobileCard } from "@/components/customers/customer-mobile-card";
 import { formatDate } from "@/lib/formatters";
 import { Plus, Search, ChevronLeft, ChevronRight, Users } from "lucide-react";
 
@@ -157,6 +158,12 @@ function PageContent() {
             </div>
           ) : (
             <>
+              <div className="space-y-3 lg:hidden">
+                {customers.map((customer) => (
+                  <CustomerMobileCard key={customer.id} customer={customer} />
+                ))}
+              </div>
+              <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -216,6 +223,7 @@ function PageContent() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between border-t pt-4 mt-4">

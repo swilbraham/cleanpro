@@ -16,6 +16,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { PaymentStatusBadge } from "@/components/payments/payment-status-badge";
+import { InvoiceMobileCard } from "@/components/invoices/invoice-mobile-card";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import {
   Search,
@@ -187,6 +188,12 @@ function PageContent() {
             </div>
           ) : (
             <>
+              <div className="space-y-3 lg:hidden">
+                {invoices.map((invoice) => (
+                  <InvoiceMobileCard key={invoice.id} invoice={invoice} />
+                ))}
+              </div>
+              <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -247,6 +254,7 @@ function PageContent() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between border-t pt-4 mt-4">

@@ -16,6 +16,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { QuoteStatusBadge } from "@/components/quotes/quote-status-badge";
+import { QuoteMobileCard } from "@/components/quotes/quote-mobile-card";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import {
   Plus,
@@ -198,6 +199,12 @@ function PageContent() {
             </div>
           ) : (
             <>
+              <div className="space-y-3 lg:hidden">
+                {quotes.map((quote) => (
+                  <QuoteMobileCard key={quote.id} quote={quote} />
+                ))}
+              </div>
+              <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -247,6 +254,7 @@ function PageContent() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
 
               {pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between border-t pt-4 mt-4">
