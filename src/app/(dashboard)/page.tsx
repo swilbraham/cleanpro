@@ -14,6 +14,8 @@ import {
   AlertCircle,
   Briefcase,
   ArrowRight,
+  Inbox,
+  Calendar,
 } from "lucide-react";
 import type { DashboardStats } from "@/types";
 
@@ -133,6 +135,50 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Link href="/requests/new">
+          <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all">
+            <CardContent className="flex flex-col items-center gap-3 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Inbox className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-sm font-medium">New Request</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/jobs/new">
+          <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all">
+            <CardContent className="flex flex-col items-center gap-3 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Briefcase className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-sm font-medium">New Job</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/calendar">
+          <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all">
+            <CardContent className="flex flex-col items-center gap-3 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <Calendar className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-sm font-medium">View Calendar</span>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/route-planner">
+          <Card className="cursor-pointer hover:border-primary/50 hover:shadow-md transition-all">
+            <CardContent className="flex flex-col items-center gap-3 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                <MapPin className="h-6 w-6 text-primary" />
+              </div>
+              <span className="text-sm font-medium">View Route</span>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Today's Jobs */}

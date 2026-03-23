@@ -3,6 +3,7 @@
 import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, User } from "lucide-react";
+import { GlobalSearch } from "@/components/layout/global-search";
 
 export function Topbar() {
   const { data: session } = useSession();
@@ -14,6 +15,7 @@ export function Topbar() {
           CleanPro
         </h2>
       </div>
+      <GlobalSearch />
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 text-sm">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sidebar text-white text-xs font-semibold">

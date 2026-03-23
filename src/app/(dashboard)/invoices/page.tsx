@@ -17,12 +17,15 @@ import {
 } from "@/components/ui/table";
 import { PaymentStatusBadge } from "@/components/payments/payment-status-badge";
 import { InvoiceMobileCard } from "@/components/invoices/invoice-mobile-card";
+import { useToast } from "@/components/ui/toast";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 import {
   Search,
   ChevronLeft,
   ChevronRight,
   FileText,
+  Trash2,
+  XCircle,
 } from "lucide-react";
 
 const STATUS_FILTERS = [
@@ -66,6 +69,7 @@ interface Pagination {
 function PageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -74,6 +78,8 @@ function PageContent() {
     totalPages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const currentStatus = searchParams.get("status") || "";
   const currentSearch = searchParams.get("search") || "";
@@ -105,6 +111,11 @@ function PageContent() {
     fetchInvoices();
   }, [fetchInvoices]);
 
+  // Clear selection when invoices change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [invoices]);
+
   const updateParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString());
     for (const [key, value] of Object.entries(updates)) {
@@ -128,6 +139,62 @@ function PageContent() {
   const goToPage = (newPage: number) => {
     updateParams({ page: newPage.toString() });
   };
+
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === invoices.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(invoices.map((i) => i.id)));
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    const count = selectedIds.size;
+    const actionLabel = action === "delete" ? "delete" : "void";
+
+    if (
+      !confirm(
+        `Are you sure you want to ${actionLabel} ${count} invoice(s)? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/invoices/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ids: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bulk action failed");
+
+      toast(data.message);
+      setSelectedIds(new Set());
+      fetchInvoices();
+    } catch (error: any) {
+      toast(error.message || "Bulk action failed", "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const hasSelection = selectedIds.size > 0;
 
   return (
     <div className="space-y-6">
@@ -153,6 +220,43 @@ function PageContent() {
           </Button>
         ))}
       </div>
+
+      {/* Bulk Action Bar */}
+      {hasSelection && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("void")}
+            disabled={bulkLoading}
+          >
+            <XCircle className="mr-1 h-3.5 w-3.5 text-yellow-600" />
+            Void
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("delete")}
+            disabled={bulkLoading}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" />
+            Delete
+          </Button>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -188,15 +292,40 @@ function PageContent() {
             </div>
           ) : (
             <>
+              {/* Mobile card view */}
               <div className="space-y-3 lg:hidden">
                 {invoices.map((invoice) => (
-                  <InvoiceMobileCard key={invoice.id} invoice={invoice} />
+                  <div key={invoice.id} className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(invoice.id)}
+                      onChange={() => toggleSelect(invoice.id)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-4 h-4 w-4 rounded border-border text-primary focus:ring-primary shrink-0"
+                    />
+                    <div className="flex-1">
+                      <InvoiceMobileCard invoice={invoice} />
+                    </div>
+                  </div>
                 ))}
               </div>
+
+              {/* Desktop table view */}
               <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={
+                          invoices.length > 0 &&
+                          selectedIds.size === invoices.length
+                        }
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                    </TableHead>
                     <TableHead>Invoice #</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Job</TableHead>
@@ -211,13 +340,31 @@ function PageContent() {
                   {invoices.map((invoice) => (
                     <TableRow
                       key={invoice.id}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/invoices/${invoice.id}`)}
+                      className={`cursor-pointer ${selectedIds.has(invoice.id) ? "bg-primary/5" : ""}`}
                     >
-                      <TableCell className="font-medium">
+                      <TableCell
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(invoice.id)}
+                          onChange={() => toggleSelect(invoice.id)}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                      </TableCell>
+                      <TableCell
+                        className="font-medium"
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         {invoice.invoiceNumber}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         <div className="text-sm font-medium">
                           {invoice.customer.firstName}{" "}
                           {invoice.customer.lastName}
@@ -235,19 +382,43 @@ function PageContent() {
                           {invoice.job.jobNumber}
                         </Link>
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         <PaymentStatusBadge status={invoice.status} />
                       </TableCell>
-                      <TableCell className="text-right font-medium">
+                      <TableCell
+                        className="text-right font-medium"
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         {formatCurrency(invoice.total)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell
+                        className="text-right"
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         {formatCurrency(invoice.amountPaid)}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell
+                        className="text-muted-foreground"
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         {formatDate(invoice.dueDate)}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell
+                        className="text-muted-foreground"
+                        onClick={() =>
+                          router.push(`/invoices/${invoice.id}`)
+                        }
+                      >
                         {formatDate(invoice.createdAt)}
                       </TableCell>
                     </TableRow>

@@ -17,8 +17,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { CustomerMobileCard } from "@/components/customers/customer-mobile-card";
+import { useToast } from "@/components/ui/toast";
 import { formatDate } from "@/lib/formatters";
-import { Plus, Search, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { Plus, Search, ChevronLeft, ChevronRight, Users, Trash2 } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -45,6 +46,7 @@ interface Pagination {
 function PageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -57,6 +59,8 @@ function PageContent() {
     searchParams.get("search") || ""
   );
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const page = parseInt(searchParams.get("page") || "1", 10);
 
@@ -82,6 +86,67 @@ function PageContent() {
   useEffect(() => {
     fetchCustomers();
   }, [fetchCustomers]);
+
+  // Clear selection when customers change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [customers]);
+
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === customers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(customers.map((c) => c.id)));
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    const count = selectedIds.size;
+    const actionLabel = "delete";
+
+    if (
+      !confirm(
+        `Are you sure you want to ${actionLabel} ${count} customer(s)? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/customers/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ids: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bulk action failed");
+
+      toast(data.message);
+      setSelectedIds(new Set());
+      fetchCustomers();
+    } catch (error: any) {
+      toast(error.message || "Bulk action failed", "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const hasSelection = selectedIds.size > 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,6 +180,34 @@ function PageContent() {
           </Button>
         </Link>
       </div>
+
+      {/* Bulk Action Bar */}
+      {hasSelection && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("delete")}
+            disabled={bulkLoading}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" />
+            Delete
+          </Button>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -160,13 +253,33 @@ function PageContent() {
             <>
               <div className="space-y-3 lg:hidden">
                 {customers.map((customer) => (
-                  <CustomerMobileCard key={customer.id} customer={customer} />
+                  <div key={customer.id} className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(customer.id)}
+                      onChange={() => toggleSelect(customer.id)}
+                      className="mt-4 h-4 w-4 rounded border-border text-primary focus:ring-primary shrink-0"
+                    />
+                    <div className="flex-1">
+                      <CustomerMobileCard customer={customer} />
+                    </div>
+                  </div>
                 ))}
               </div>
               <div className="hidden lg:block">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        checked={
+                          customers.length > 0 && selectedIds.size === customers.length
+                        }
+                        onChange={toggleSelectAll}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                      />
+                    </TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Contact</TableHead>
                     <TableHead>Location</TableHead>
@@ -180,13 +293,27 @@ function PageContent() {
                   {customers.map((customer) => (
                     <TableRow
                       key={customer.id}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/customers/${customer.id}`)}
+                      className={`cursor-pointer ${selectedIds.has(customer.id) ? "bg-primary/5" : ""}`}
                     >
-                      <TableCell className="font-medium">
+                      <TableCell
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(customer.id)}
+                          onChange={() => toggleSelect(customer.id)}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                      </TableCell>
+                      <TableCell
+                        className="font-medium"
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
                         {customer.firstName} {customer.lastName}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
                         <div className="text-sm">{customer.phone}</div>
                         {customer.email && (
                           <div className="text-sm text-muted-foreground">
@@ -194,15 +321,27 @@ function PageContent() {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
                         <div className="text-sm">{customer.city}</div>
                         <div className="text-sm text-muted-foreground">
                           {customer.postcode}
                         </div>
                       </TableCell>
-                      <TableCell>{customer.properties.length}</TableCell>
-                      <TableCell>{customer.jobs.length}</TableCell>
-                      <TableCell>
+                      <TableCell
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
+                        {customer.properties.length}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
+                        {customer.jobs.length}
+                      </TableCell>
+                      <TableCell
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
                         <div className="flex flex-wrap gap-1">
                           {customer.tags.slice(0, 3).map((tag) => (
                             <Badge key={tag} variant="secondary">
@@ -216,7 +355,10 @@ function PageContent() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell
+                        className="text-muted-foreground"
+                        onClick={() => router.push(`/customers/${customer.id}`)}
+                      >
                         {formatDate(customer.createdAt)}
                       </TableCell>
                     </TableRow>

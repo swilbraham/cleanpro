@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { JobStatusBadge } from "@/components/jobs/job-status-badge";
 import { JobMobileCard } from "@/components/jobs/job-mobile-card";
+import { useToast } from "@/components/ui/toast";
 import { formatDate, formatTime, formatCurrency } from "@/lib/formatters";
 import {
   Plus,
@@ -25,6 +26,10 @@ import {
   ChevronRight,
   Briefcase,
   Calendar,
+  Trash2,
+  XCircle,
+  CheckCircle,
+  RotateCcw,
 } from "lucide-react";
 
 interface Job {
@@ -71,6 +76,7 @@ const STATUS_TABS = [
 function PageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -79,6 +85,8 @@ function PageContent() {
     totalPages: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
 
   const activeStatus = searchParams.get("status") || "";
   const search = searchParams.get("search") || "";
@@ -129,6 +137,11 @@ function PageContent() {
     fetchJobs();
   }, [fetchJobs]);
 
+  // Clear selection when jobs change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [jobs]);
+
   const handleStatusTab = (status: string) => {
     const params = buildParams({ status, page: "1" });
     router.push(`/jobs?${params}`);
@@ -156,6 +169,69 @@ function PageContent() {
 
   const getJobTotal = (job: Job) =>
     job.lineItems.reduce((sum, item) => sum + item.total, 0);
+
+  // Selection helpers
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === jobs.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(jobs.map((j) => j.id)));
+    }
+  };
+
+  const handleBulkAction = async (action: string) => {
+    const count = selectedIds.size;
+    const actionLabel =
+      action === "delete"
+        ? "delete"
+        : action === "cancel"
+          ? "cancel"
+          : action === "complete"
+            ? "complete"
+            : "reschedule";
+
+    if (
+      !confirm(
+        `Are you sure you want to ${actionLabel} ${count} job(s)? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/jobs/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ids: Array.from(selectedIds) }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Bulk action failed");
+
+      toast(data.message);
+      setSelectedIds(new Set());
+      fetchJobs();
+    } catch (error: any) {
+      toast(error.message || "Bulk action failed", "error");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const hasSelection = selectedIds.size > 0;
 
   return (
     <div className="space-y-6">
@@ -198,6 +274,61 @@ function PageContent() {
           </button>
         ))}
       </div>
+
+      {/* Bulk Action Bar */}
+      {hasSelection && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selected
+          </span>
+          <div className="h-4 w-px bg-border" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("complete")}
+            disabled={bulkLoading}
+          >
+            <CheckCircle className="mr-1 h-3.5 w-3.5 text-green-600" />
+            Complete
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("cancel")}
+            disabled={bulkLoading}
+          >
+            <XCircle className="mr-1 h-3.5 w-3.5 text-yellow-600" />
+            Cancel
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("schedule")}
+            disabled={bulkLoading}
+          >
+            <RotateCcw className="mr-1 h-3.5 w-3.5 text-blue-600" />
+            Reschedule
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleBulkAction("delete")}
+            disabled={bulkLoading}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="mr-1 h-3.5 w-3.5" />
+            Delete
+          </Button>
+          <div className="flex-1" />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -264,76 +395,125 @@ function PageContent() {
               {/* Mobile card view */}
               <div className="space-y-3 lg:hidden">
                 {jobs.map((job) => (
-                  <JobMobileCard key={job.id} job={job} />
+                  <div key={job.id} className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(job.id)}
+                      onChange={() => toggleSelect(job.id)}
+                      className="mt-4 h-4 w-4 rounded border-border text-primary focus:ring-primary shrink-0"
+                    />
+                    <div className="flex-1">
+                      <JobMobileCard job={job} />
+                    </div>
+                  </div>
                 ))}
               </div>
 
               {/* Desktop table view */}
               <div className="hidden lg:block">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Job #</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Property</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Time</TableHead>
-                    <TableHead>Assigned To</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {jobs.map((job) => (
-                    <TableRow
-                      key={job.id}
-                      className="cursor-pointer"
-                      onClick={() => router.push(`/jobs/${job.id}`)}
-                    >
-                      <TableCell className="font-medium">
-                        {job.jobNumber}
-                      </TableCell>
-                      <TableCell>
-                        <JobStatusBadge status={job.status} />
-                      </TableCell>
-                      <TableCell>
-                        {job.customer.firstName} {job.customer.lastName}
-                      </TableCell>
-                      <TableCell>
-                        {job.property?.address || "No property"}
-                      </TableCell>
-                      <TableCell>{formatDate(job.scheduledDate)}</TableCell>
-                      <TableCell>
-                        {job.scheduledTime
-                          ? formatTime(job.scheduledTime)
-                          : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {job.assignedTo ? (
-                          <span className="flex items-center gap-2">
-                            {job.assignedTo.color && (
-                              <span
-                                className="inline-block h-3 w-3 rounded-full"
-                                style={{
-                                  backgroundColor: job.assignedTo.color,
-                                }}
-                              />
-                            )}
-                            {job.assignedTo.name}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            Unassigned
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(getJobTotal(job))}
-                      </TableCell>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-10">
+                        <input
+                          type="checkbox"
+                          checked={
+                            jobs.length > 0 && selectedIds.size === jobs.length
+                          }
+                          onChange={toggleSelectAll}
+                          className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                        />
+                      </TableHead>
+                      <TableHead>Job #</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Property</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Time</TableHead>
+                      <TableHead>Assigned To</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {jobs.map((job) => (
+                      <TableRow
+                        key={job.id}
+                        className={`cursor-pointer ${selectedIds.has(job.id) ? "bg-primary/5" : ""}`}
+                      >
+                        <TableCell
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(job.id)}
+                            onChange={() => toggleSelect(job.id)}
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                          />
+                        </TableCell>
+                        <TableCell
+                          className="font-medium"
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {job.jobNumber}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          <JobStatusBadge status={job.status} />
+                        </TableCell>
+                        <TableCell
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {job.customer.firstName} {job.customer.lastName}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {job.property?.address || "No property"}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {formatDate(job.scheduledDate)}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {job.scheduledTime
+                            ? formatTime(job.scheduledTime)
+                            : "-"}
+                        </TableCell>
+                        <TableCell
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {job.assignedTo ? (
+                            <span className="flex items-center gap-2">
+                              {job.assignedTo.color && (
+                                <span
+                                  className="inline-block h-3 w-3 rounded-full"
+                                  style={{
+                                    backgroundColor: job.assignedTo.color,
+                                  }}
+                                />
+                              )}
+                              {job.assignedTo.name}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              Unassigned
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell
+                          className="text-right"
+                          onClick={() => router.push(`/jobs/${job.id}`)}
+                        >
+                          {formatCurrency(getJobTotal(job))}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
               {pagination.totalPages > 1 && (
