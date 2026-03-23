@@ -142,7 +142,7 @@ export function PropertyForm({
             id="prop-rooms"
             type="number"
             min="1"
-            {...register("rooms")}
+            {...register("rooms", { setValueAs: (v) => v === "" || v === undefined ? undefined : Number(v) })}
             placeholder="e.g. 4"
           />
           {errors.rooms && (
@@ -155,7 +155,7 @@ export function PropertyForm({
             id="prop-sqft"
             type="number"
             min="1"
-            {...register("sqFootage")}
+            {...register("sqFootage", { setValueAs: (v) => v === "" || v === undefined ? undefined : Number(v) })}
             placeholder="e.g. 1200"
           />
           {errors.sqFootage && (

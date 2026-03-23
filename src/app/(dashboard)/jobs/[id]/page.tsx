@@ -122,7 +122,8 @@ export default function JobDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [id, router, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
     fetchJob();
