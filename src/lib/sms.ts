@@ -42,5 +42,5 @@ export function buildReminderMessage(customerFirstName: string): string {
 }
 
 export function buildReviewMessage(customerFirstName: string): string {
-  return `Hi ${customerFirstName}, thank you for choosing us for your cleaning. If you are happy with the clean please leave us a review on https://g.page/r/wirral-carpet-cleaning/review and if there are any problems please call us on 07724564683 and we will ensure you are happy with the end result. Thanks, Simon`;
+  return `Hi ${customerFirstName}, thank you for choosing us for your cleaning. If you are happy with the clean please leave us a review on https://share.google/rOepzL0A42jiYKmXQ and if there are any problems please call us on 07724564683 and we will ensure you are happy with the end result. Thanks, Simon`;
 }
