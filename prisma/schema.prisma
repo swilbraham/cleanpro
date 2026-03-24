@@ -204,9 +204,10 @@ model Job {
   property    Property?     @relation(fields: [propertyId], references: [id])
   quote       Quote?        @relation(fields: [quoteId], references: [id])
   assignedTo  User?         @relation("AssignedJobs", fields: [assignedToId], references: [id])
-  lineItems   JobLineItem[]
-  invoice     Invoice?
-  timeEntries TimeEntry[]
+  lineItems    JobLineItem[]
+  invoice      Invoice?
+  timeEntries  TimeEntry[]
+  smsReminders SmsReminder[]
 
   @@index([customerId])
   @@index([scheduledDate])
@@ -417,6 +418,39 @@ model CompanySettings {
   quoteTerms     String? @db.Text
 
   @@map("company_settings")
+}
+
+// ==================== SMS REMINDERS ====================
+
+model SmsReminder {
+  id        String         @id @default(cuid())
+  jobId     String
+  type      SmsReminderType
+  phone     String
+  message   String         @db.Text
+  status    SmsStatus      @default(PENDING)
+  twilioSid String?
+  error     String?
+  sentAt    DateTime?
+  createdAt DateTime       @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, type])
+  @@index([status])
+  @@index([createdAt])
+  @@map("sms_reminders")
+}
+
+enum SmsReminderType {
+  REMINDER_24H_BEFORE
+  REVIEW_24H_AFTER
+}
+
+enum SmsStatus {
+  PENDING
+  SENT
+  FAILED
 }
 
 // ==================== SEQUENCE COUNTER ====================

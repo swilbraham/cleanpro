@@ -11,6 +11,7 @@ import {
   Inbox,
   BarChart3,
   Clock,
+  MessageSquare,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,6 +33,7 @@ export const navItems: NavItem[] = [
   { href: "/route-planner", label: "Route Planner", icon: MapPin, group: "main" },
   { href: "/payments", label: "Payments", icon: CreditCard, group: "main" },
   { href: "/timesheets", label: "Time Sheets", icon: Clock, group: "main" },
+  { href: "/sms-log", label: "SMS Log", icon: MessageSquare, group: "main" },
   { href: "/reports", label: "Reports", icon: BarChart3, group: "main" },
   { href: "/settings", label: "Settings", icon: Settings, group: "secondary" },
 ];
