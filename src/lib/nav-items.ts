@@ -12,6 +12,7 @@ import {
   BarChart3,
   Clock,
   MessageSquare,
+  Upload,
   type LucideIcon,
 } from "lucide-react";
 
@@ -35,6 +36,7 @@ export const navItems: NavItem[] = [
   { href: "/timesheets", label: "Time Sheets", icon: Clock, group: "main" },
   { href: "/sms-log", label: "SMS Log", icon: MessageSquare, group: "main" },
   { href: "/reports", label: "Reports", icon: BarChart3, group: "main" },
+  { href: "/import", label: "Import", icon: Upload, group: "secondary" },
   { href: "/settings", label: "Settings", icon: Settings, group: "secondary" },
 ];
 
